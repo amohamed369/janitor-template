@@ -1,36 +1,56 @@
-# janitor-template: a daily email-cleanup bot for any inbox
+# janitor-template
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-A fully de-personalized, self-hostable copy of a production Gmail "janitor." It runs once a day, triages new mail, files it on a **visibility-first** schedule (you see important things first; records file instantly), keeps your inbox a clean waiting-room, sends you a **daily digest**, and **learns your preferences** over time. Plug in your own account + rules and go.
-
-**Nothing is ever permanently deleted** (trash only, recoverable). It never touches starred / protected / "nostalgia" mail, and a `PreToolUse` hook (`.claude/hooks/guard.sh`) hard-blocks destructive operations even if the model errs.
+A daily email-cleanup bot for Gmail, run by Claude.
 
 ![How each run works: fetch only new mail, triage each message, then trash and unsubscribe, mark read, file to its home, or hold visible for 7 days, then email you a daily digest and learn from your feedback.](docs/how-it-works.png)
 
-*One run, start to finish. It fetches only new mail, triages each message, files or clears it, then sends you a digest and learns from your feedback.*
-
-## What it does each run
-1. Fetches only new mail since last run (History API cursor). 2. Triages each: junk → trash + one-click unsubscribe + filter (spam only for actual scam); keeper → routes to its label-home. 3. Marks read **only** disposable noise (receipts/OTP/promo/fluff). 4. Files records instantly; holds important mail visible for a 7-day window, then files + surfaces it. 5. Sends you an email-to-self **📬 Digest** (filed / surfacing / needs-you / junk-cleared + trash-chain transparency). 6. Commits its memory so it learns.
+- Triages new mail once a day
+- Trashes junk and unsubscribes you
+- Files records to your labels
+- Keeps important mail in view for 7 days
+- Emails you a daily digest
+- Learns from your feedback
+- Trash only, never a permanent delete
+- Leaves starred, protected and "nostalgia" mail alone
 
 ![The daily digest the bot emails you, with needs-you, surfacing, filed, and junk-cleared sections. Illustrative sample with placeholder data.](docs/daily-digest.png)
 
-*The digest it emails you each run (illustrative sample, placeholder data). What needs you stays visible; routine mail is already filed or cleared, and nothing is deleted for good.*
+*An illustrative digest, with placeholder data.*
 
-## How you talk to it
-- Reply to any email, slap the **`#agent-feedback`** label on it → the bot obeys + remembers next run. **`#agent-undo`** reverses its last action on a message.
-- Or edit `memory/feedback_inbox.md`. Or reply `DONE` on a digest item to dismiss it.
+## Talk to it
 
-## Setup
-1. **OAuth.** Create a Google Cloud OAuth client, enable the Gmail API, scopes `gmail.modify` + `gmail.settings.basic`; get a refresh token into `token.json` (gitignored, never commit it). Set `OWNER_EMAIL` to your address.
-2. **Your rules.** Edit `memory/rules.md`: your label-homes, your **protected** senders (family/financial/etc.), your **nostalgia** keeps. Create the labels in Gmail (incl. `#agent-feedback`, `#agent-undo`, `Digest`, and hidden `zz-Surfacing`/`zz-Pinned`).
-3. **Test locally.** `export OWNER_EMAIL=you@example.com GMAIL_CLIENT_ID=… GMAIL_CLIENT_SECRET=… GMAIL_REFRESH_TOKEN=…; source scripts/lib.sh; get_access_token` then follow `PROMPT.md`.
-4. **Deploy.** Private repo + a daily scheduler (a Claude routine, or cron) with the OAuth creds in the prompt/env. One supervised run, then hands-off.
+- Put the `#agent-feedback` label on an email you've replied to with an instruction.
+- Put `#agent-undo` on an email to reverse its last action.
+- Reply `DONE` to a digest item to dismiss it.
 
-## Replace these placeholders
-`{{OWNER_NAME}}` · `{{OWNER_EMAIL}}` (or the `${OWNER_EMAIL}` env var) · `{{GITHUB_OWNER}}` · `{{REPO}}` · `{{family}}` · plus the PROTECTED + NOSTALGIA lists in `memory/rules.md`.
+## Set it up
 
-## Files
-`CLAUDE.md` (identity + invariants + the canonical fleet doctrine) · `PROMPT.md` (the daily procedure) · `memory/rules.md` (your sender→label map) · `scripts/lib.sh` (Gmail helpers, no pip deps) · `.claude/hooks/guard.sh` (hard safety) · `.github/workflows/auto-merge-claude.yml`.
+1. Create a Google Cloud OAuth client with the Gmail API on and the scopes `gmail.modify` and `gmail.settings.basic`. Get a refresh token, and never commit it.
+2. Replace the placeholders. Find them with:
 
-_This is a generic template, no personal data. Adapt the providers/labels to your needs._
+   ```bash
+   grep -rIn "{{" --exclude-dir=.git .
+   ```
+
+3. Edit `memory/rules.md`: your labels, protected senders and nostalgia keeps.
+4. In Gmail, create your labels plus `#agent-feedback`, `#agent-undo`, `Digest`, `zz-Surfacing` and `zz-Pinned`.
+5. Test it locally, then follow [PROMPT.md](PROMPT.md):
+
+   ```bash
+   export OWNER_EMAIL=you@example.com
+   export GMAIL_CLIENT_ID=... GMAIL_CLIENT_SECRET=... GMAIL_REFRESH_TOKEN=...
+   source scripts/lib.sh
+   get_access_token
+   ```
+
+6. Put your copy in a private repo and run it daily (a Claude routine, or cron). Watch the first run.
+
+## More
+
+- [PACKAGE.md](PACKAGE.md): every file, and the command-center skill
+- [PROMPT.md](PROMPT.md): what each run does
+- [CLAUDE.md](CLAUDE.md): the rules it never breaks
+
+## License
+
+MIT. See [LICENSE](LICENSE).
